@@ -1,6 +1,6 @@
 services:
   db:
-    image: mariadb:latest
+    image: mariadb:11.4
     container_name: blog_db
     restart: unless-stopped
     environment:
