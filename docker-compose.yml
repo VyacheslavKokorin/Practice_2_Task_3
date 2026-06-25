@@ -20,6 +20,24 @@ services:
     networks:
       - blog_net
 
+  backend:
+    build: ./backend
+    container_name: blog_backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - blog_net
+
 networks:
   blog_net:
     driver: bridge
