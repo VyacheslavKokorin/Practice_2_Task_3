@@ -1,0 +1,13 @@
+{
+  "name": "blog-app",
+  "version": "1.0.0",
+  "description": "Backend",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "express": "^5.2.0",
+    "mysql2": "^3.22.5"
+  }
+}
