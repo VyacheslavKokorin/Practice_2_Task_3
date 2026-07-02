@@ -18,5 +18,10 @@ services:
       timeout: 5s
       retries: 10
       start_period: 15s
+  app:
+    build: ./app
+    container_name: blog_backend_container
+    ports:
+      - "3000:3000"
 volumes:
   mysql_data:
