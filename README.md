@@ -19,6 +19,12 @@ git clone https://github.com/VyacheslavKokorin/Practice_2_Task_3.git
 cd Practice_2_Task_3
 ```
 
+Создайте файл с переменными окружения
+```
+cp .env_example .env
+```
+В боевом применении пароли необходимо обязательно поменять на что-то сложное и уникальное, но в учебном можно оставить так
+
 Запустите контейнеры Docker
 ```
 docker compose up -d
