@@ -21,6 +21,15 @@ services:
   app:
     build: ./app
     container_name: blog_backend_container
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3000:3000"
 volumes:
