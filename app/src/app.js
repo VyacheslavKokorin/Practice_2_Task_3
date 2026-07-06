@@ -1,8 +1,8 @@
 const express = require("express");
 const session = require("express-session");
-
 const app = express();
 const db = require("./db");
+const authRoutes = require("./routes/auth");
 const PORT = 3000;
 
 app.use(
@@ -12,6 +12,9 @@ app.use(
     saveUninitialized: false
   })
 );
+
+app.use(express.urlencoded({ extended: true }));
+app.use(authRoutes);
 
 app.get("/", (req, res) => {
   res.send("Blog application is running");
