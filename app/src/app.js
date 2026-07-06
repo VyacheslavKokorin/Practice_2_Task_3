@@ -1,7 +1,17 @@
 const express = require("express");
+const session = require("express-session");
+
 const app = express();
 const db = require("./db");
 const PORT = 3000;
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false
+  })
+);
 
 app.get("/", (req, res) => {
   res.send("Blog application is running");
