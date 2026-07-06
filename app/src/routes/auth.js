@@ -55,4 +55,66 @@ router.post("/register", async (req, res) => {
   }
 });
 
+router.get("/login", (req, res) => {
+  res.send(`
+    <h1>Вход</h1>
+
+    <form method="POST" action="/login">
+      <div>
+        <label for="email">Email:</label>
+        <input id="email" name="email" type="email">
+      </div>
+
+      <div>
+        <label for="password">Пароль:</label>
+        <input id="password" name="password" type="password">
+      </div>
+
+      <button type="submit">Войти</button>
+    </form>
+  `);
+});
+
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send("Введите email и пароль");
+  }
+
+  try {
+    const [users] = await db.query(
+      `SELECT id, username, password_hash
+       FROM users
+       WHERE email = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).send("Пользователь не найден");
+    }
+
+    const user = users[0];
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
+    if (!passwordMatches) {
+      return res.status(400).send("Неверный пароль");
+    }
+
+    req.session.userId = user.id;
+    req.session.username = user.username;
+
+    res.send(`Вы вошли как ${user.username}`);
+  } catch (error) {
+    console.error("Ошибка входа:", error.message);
+    res.status(500).send("Не удалось выполнить вход");
+  }
+});
+
+
 module.exports = router;
