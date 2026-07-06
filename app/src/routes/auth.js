@@ -116,5 +116,15 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/logout", (req, res) => {
+  req.session.destroy((error) => {
+    if (error) {
+      console.error("Ошибка выхода:", error.message);
+      return res.status(500).send("Не удалось выполнить выход");
+    }
+
+    res.send("Вы успешно вышли из аккаунта");
+  });
+});
 
 module.exports = router;
