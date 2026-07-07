@@ -84,4 +84,49 @@ router.get("/posts/:id", async (req, res) => {
   }
 });
 
+// Страница редактирования поста
+router.get("/posts/:id/edit", requireAuth, async (req, res) => {
+  const postId = Number(req.params.id);
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(404).send("Пост не найден");
+  }
+
+  try {
+    const [posts] = await db.query(
+      `SELECT id, title, content
+       FROM posts
+       WHERE id = ? AND user_id = ?`,
+      [postId, req.session.userId]
+    );
+
+    if (posts.length === 0) {
+      return res.status(403).send("Вы не можете редактировать этот пост");
+    }
+
+    const post = posts[0];
+
+    res.send(`
+      <h1>Редактирование поста</h1>
+
+      <form method="POST" action="/posts/${post.id}/edit">
+        <div>
+          <label for="title">Заголовок:</label>
+          <input id="title" name="title" type="text" value="${post.title}">
+        </div>
+
+        <div>
+          <label for="content">Текст поста:</label>
+          <textarea id="content" name="content">${post.content}</textarea>
+        </div>
+
+        <button type="submit">Сохранить изменения</button>
+      </form>
+    `);
+  } catch (error) {
+    console.error("Ошибка получения поста для редактирования:", error.message);
+    res.status(500).send("Не удалось открыть страницу редактирования");
+  }
+});
+
 module.exports = router;
