@@ -129,4 +129,36 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
   }
 });
 
+// Сохранение поста после редактирования
+router.post("/posts/:id/edit", requireAuth, async (req, res) => {
+  const postId = Number(req.params.id);
+  const { title, content } = req.body;
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(404).send("Пост не найден");
+  }
+
+  if (!title || !content) {
+    return res.status(400).send("Заголовок и текст поста должны быть заполнены");
+  }
+
+  try {
+    const [result] = await db.query(
+      `UPDATE posts
+       SET title = ?, content = ?
+       WHERE id = ? AND user_id = ?`,
+      [title, content, postId, req.session.userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(403).send("Вы не можете редактировать этот пост");
+    }
+
+    res.send("Пост успешно обновлён");
+  } catch (error) {
+    console.error("Ошибка редактирования поста:", error.message);
+    res.status(500).send("Не удалось обновить пост");
+  }
+});
+
 module.exports = router;
