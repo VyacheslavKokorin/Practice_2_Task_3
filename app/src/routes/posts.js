@@ -4,6 +4,7 @@ const db = require("../db");
 
 const router = express.Router();
 
+// Создание поста
 router.get("/posts/create", requireAuth, (req, res) => {
   res.send(`
     <h1>Создание поста</h1>
@@ -42,6 +43,44 @@ router.post("/posts/create", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Ошибка создания поста:", error.message);
     res.status(500).send("Не удалось создать пост");
+  }
+});
+
+// Просмотр поста
+router.get("/posts/:id", async (req, res) => {
+  const postId = Number(req.params.id);
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(404).send("Пост не найден");
+  }
+
+  try {
+    const [posts] = await db.query(
+      `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username
+       FROM posts
+       JOIN users ON posts.user_id = users.id
+       WHERE posts.id = ?
+         AND posts.visibility = 'public'`,
+      [postId]
+    );
+
+    if (posts.length === 0) {
+      return res.status(404).send("Пост не найден");
+    }
+
+    const post = posts[0];
+
+    res.send(`
+      <h1>${post.title}</h1>
+      <p>${post.content}</p>
+      <p>Автор: ${post.username}</p>
+      <p>Дата: ${post.created_at}</p>
+
+      <p><a href="/">Вернуться к списку постов</a></p>
+    `);
+  } catch (error) {
+    console.error("Ошибка получения поста:", error.message);
+    res.status(500).send("Не удалось получить пост");
   }
 });
 
