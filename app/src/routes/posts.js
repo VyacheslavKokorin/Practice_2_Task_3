@@ -68,13 +68,58 @@ router.get("/posts/:id", async (req, res) => {
       return res.status(404).send("Пост не найден");
     }
 
+    const [comments] = await db.query(
+      `SELECT comments.content, comments.created_at, users.username
+      FROM comments
+      JOIN users ON comments.user_id = users.id
+      WHERE comments.post_id = ?
+      ORDER BY comments.created_at ASC`,
+      [postId]
+    );
+
     const post = posts[0];
+
+    let commentsHtml = "<h2>Комментарии</h2>";
+
+    if (comments.length === 0) {
+      commentsHtml += "<p>Комментариев пока нет.</p>";
+    } else {
+      for (const comment of comments) {
+        commentsHtml += `
+          <div>
+            <p>${comment.content}</p>
+            <p>Автор: ${comment.username}</p>
+            <p>Дата: ${comment.created_at}</p>
+          </div>
+          <hr>
+        `;
+      }
+    }
+
+    let commentForm = "";
+
+    if (req.session.userId) {
+      commentForm = `
+        <h2>Добавить комментарий</h2>
+
+        <form method="POST" action="/posts/${post.id}/comments">
+          <div>
+            <textarea name="content"></textarea>
+          </div>
+
+          <button type="submit">Отправить</button>
+        </form>
+      `;
+    }
 
     res.send(`
       <h1>${post.title}</h1>
       <p>${post.content}</p>
       <p>Автор: ${post.username}</p>
       <p>Дата: ${post.created_at}</p>
+
+      ${commentsHtml}
+      ${commentForm}
 
       <p><a href="/">Вернуться к списку постов</a></p>
     `);
@@ -189,5 +234,44 @@ router.post("/posts/:id/delete", requireAuth, async (req, res) => {
     res.status(500).send("Не удалось удалить пост");
   }
 });
+
+// Добавление комментария
+router.post("/posts/:id/comments", requireAuth, async (req, res) => {
+  const postId = Number(req.params.id);
+  const { content } = req.body;
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(404).send("Пост не найден");
+  }
+
+  if (!content || content.trim() === "") {
+    return res.status(400).send("Комментарий не может быть пустым");
+  }
+
+  try {
+    const [posts] = await db.query(
+      `SELECT id
+       FROM posts
+       WHERE id = ? AND visibility = 'public'`,
+      [postId]
+    );
+
+    if (posts.length === 0) {
+      return res.status(404).send("Пост не найден");
+    }
+
+    await db.query(
+      `INSERT INTO comments (post_id, user_id, content)
+       VALUES (?, ?, ?)`,
+      [postId, req.session.userId, content]
+    );
+
+    res.redirect(`/posts/${postId}`);
+  } catch (error) {
+    console.error("Ошибка добавления комментария:", error.message);
+    res.status(500).send("Не удалось добавить комментарий");
+  }
+});
+
 
 module.exports = router;
