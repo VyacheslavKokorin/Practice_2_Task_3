@@ -122,6 +122,9 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
 
         <button type="submit">Сохранить изменения</button>
       </form>
+      <form method="POST" action="/posts/${post.id}/delete">
+        <button type="submit">Удалить пост</button>
+      </form>
     `);
   } catch (error) {
     console.error("Ошибка получения поста для редактирования:", error.message);
@@ -158,6 +161,32 @@ router.post("/posts/:id/edit", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Ошибка редактирования поста:", error.message);
     res.status(500).send("Не удалось обновить пост");
+  }
+});
+
+// Удаление поста
+router.post("/posts/:id/delete", requireAuth, async (req, res) => {
+  const postId = Number(req.params.id);
+
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(404).send("Пост не найден");
+  }
+
+  try {
+    const [result] = await db.query(
+      `DELETE FROM posts
+       WHERE id = ? AND user_id = ?`,
+      [postId, req.session.userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(403).send("Вы не можете удалить этот пост");
+    }
+
+    res.redirect("/");
+  } catch (error) {
+    console.error("Ошибка удаления поста:", error.message);
+    res.status(500).send("Не удалось удалить пост");
   }
 });
 
