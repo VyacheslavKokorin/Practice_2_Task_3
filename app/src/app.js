@@ -20,15 +20,45 @@ app.use(postsRoutes);
 
 app.get("/", async (req, res) => {
   try {
-    const [posts] = await db.query(`
+    const tag = req.query.tag;
+
+    let sql = `
       SELECT posts.id, posts.title, posts.content, posts.created_at, users.username
       FROM posts
       JOIN users ON posts.user_id = users.id
+    `;
+
+    const params = [];
+
+    if (tag) {
+      sql += `
+        JOIN post_tags ON posts.id = post_tags.post_id
+        JOIN tags ON post_tags.tag_id = tags.id
+      `;
+    }
+
+    sql += `
       WHERE posts.visibility = 'public'
+    `;
+
+    if (tag) {
+      sql += `
+        AND tags.name = ?
+      `;
+      params.push(tag);
+    }
+
+    sql += `
       ORDER BY posts.created_at DESC
-    `);
+    `;
+
+    const [posts] = await db.query(sql, params);
 
     let html = "<h1>Публичные посты</h1>";
+
+    if (tag) {
+      html += `<p>Фильтр по тегу: #${tag}</p>`;
+    }
 
     if (posts.length === 0) {
       html += "<p>Пока нет опубликованных постов.</p>";

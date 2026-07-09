@@ -163,7 +163,7 @@ router.get("/posts/:id", async (req, res) => {
       tagsHtml += "<p>У поста нет тегов.</p>";
     } else {
       for (const tag of tags) {
-        tagsHtml += `<span>#${tag.name} </span>`;
+        tagsHtml += `<a href="/?tag=${tag.name}">#${tag.name}</a> `;
       }
     }
 
