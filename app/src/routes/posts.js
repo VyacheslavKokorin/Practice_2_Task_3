@@ -20,24 +20,60 @@ router.get("/posts/create", requireAuth, (req, res) => {
         <textarea id="content" name="content"></textarea>
       </div>
 
+      <div>
+        <label for="tags">Теги через запятую:</label>
+        <input id="tags" name="tags" type="text" placeholder="новости, погода, образование">
+      </div>
+
       <button type="submit">Создать пост</button>
     </form>
   `);
 });
 
 router.post("/posts/create", requireAuth, async (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, tags } = req.body;
 
   if (!title || !content) {
     return res.status(400).send("Заголовок и текст поста должны быть заполнены");
   }
 
-  try {
-    await db.query(
-      `INSERT INTO posts (user_id, title, content)
-       VALUES (?, ?, ?)`,
-      [req.session.userId, title, content]
-    );
+try {
+  const [result] = await db.query(
+    `INSERT INTO posts (user_id, title, content)
+     VALUES (?, ?, ?)`,
+    [req.session.userId, title, content]
+  );
+
+  const postId = result.insertId;
+
+  if (tags && tags.trim() !== "") {
+    const tagNames = tags
+      .split(",")
+      .map(tag => tag.trim().toLowerCase())
+      .filter(tag => tag !== "");
+
+    for (const tagName of tagNames) {
+      await db.query(
+        `INSERT IGNORE INTO tags (name)
+         VALUES (?)`,
+        [tagName]
+      );
+
+      const [tagRows] = await db.query(
+        `SELECT id FROM tags WHERE name = ?`,
+        [tagName]
+      );
+
+      const tagId = tagRows[0].id;
+
+      await db.query(
+        `INSERT IGNORE INTO post_tags (post_id, tag_id)
+         VALUES (?, ?)`,
+        [postId, tagId]
+      );
+    }
+  }
+
 
     res.send("Пост успешно создан");
   } catch (error) {
@@ -77,6 +113,15 @@ router.get("/posts/:id", async (req, res) => {
       [postId]
     );
 
+    const [tags] = await db.query(
+      `SELECT tags.name
+      FROM tags
+      JOIN post_tags ON tags.id = post_tags.tag_id
+      WHERE post_tags.post_id = ?
+      ORDER BY tags.name`,
+      [postId]
+    );
+
     const post = posts[0];
 
     let commentsHtml = "<h2>Комментарии</h2>";
@@ -112,11 +157,23 @@ router.get("/posts/:id", async (req, res) => {
       `;
     }
 
+    let tagsHtml = "<h2>Теги</h2>";
+
+    if (tags.length === 0) {
+      tagsHtml += "<p>У поста нет тегов.</p>";
+    } else {
+      for (const tag of tags) {
+        tagsHtml += `<span>#${tag.name} </span>`;
+      }
+    }
+
     res.send(`
       <h1>${post.title}</h1>
       <p>${post.content}</p>
       <p>Автор: ${post.username}</p>
       <p>Дата: ${post.created_at}</p>
+
+      ${tagsHtml}
 
       ${commentsHtml}
       ${commentForm}
