@@ -1,0 +1,51 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
+}
+
+header {
+  background: #222;
+  padding: 15px;
+}
+
+nav {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+nav a, nav span {
+  color: white;
+  text-decoration: none;
+}
+
+main {
+  max-width: 900px;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+}
+
+article {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+input, textarea, select {
+  width: 100%;
+  max-width: 500px;
+  padding: 8px;
+  margin: 5px 0 15px 0;
+}
+
+button {
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+a {
+  color: #0066cc;
+}

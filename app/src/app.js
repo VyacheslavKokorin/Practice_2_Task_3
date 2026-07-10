@@ -6,6 +6,7 @@ const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
 const usersRoutes = require("./routes/users");
 const PORT = 3000;
+const layout = require("./views/layout");
 
 app.use(
   session({
@@ -16,6 +17,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 app.use(authRoutes);
 app.use(postsRoutes);
 app.use(usersRoutes);
@@ -26,7 +28,7 @@ app.get("/", async (req, res) => {
     const sort = req.query.sort;
 
     let sql = `
-      SELECT posts.id, posts.title, posts.content, posts.created_at, users.username
+      SELECT posts.id, posts.title, posts.content, posts.created_at, users.id AS author_id, users.username
       FROM posts
       JOIN users ON posts.user_id = users.id
     `;
@@ -84,7 +86,7 @@ app.get("/", async (req, res) => {
           <article>
             <h2>${post.title}</h2>
             <p>${post.content}</p>
-            <p>Автор: ${post.username}</p>
+            <p>Автор: <a href="/users/${post.author_id}">${post.username}</a></p>
             <p>Дата: ${post.created_at}</p>
             <hr>
           </article>
@@ -92,7 +94,7 @@ app.get("/", async (req, res) => {
       }
     }
 
-    res.send(html);
+    res.send(layout("Главная", html, req));
   } catch (error) {
     console.error("Ошибка получения постов:", error.message);
     res.status(500).send("Не удалось получить список постов");
