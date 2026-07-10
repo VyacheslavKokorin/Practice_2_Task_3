@@ -140,4 +140,44 @@ router.post("/users/:id/unfollow", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/feed", requireAuth, async (req, res) => {
+  try {
+    const [posts] = await db.query(
+      `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username
+       FROM posts
+       JOIN users ON posts.user_id = users.id
+       JOIN subscriptions ON posts.user_id = subscriptions.following_id
+       WHERE subscriptions.follower_id = ?
+         AND posts.visibility = 'public'
+       ORDER BY posts.created_at DESC`,
+      [req.session.userId]
+    );
+
+    let html = "<h1>Лента подписок</h1>";
+
+    if (posts.length === 0) {
+      html += "<p>В ленте пока нет постов.</p>";
+    } else {
+      for (const post of posts) {
+        html += `
+          <article>
+            <h2><a href="/posts/${post.id}">${post.title}</a></h2>
+            <p>${post.content}</p>
+            <p>Автор: ${post.username}</p>
+            <p>Дата: ${post.created_at}</p>
+            <hr>
+          </article>
+        `;
+      }
+    }
+
+    html += `<p><a href="/">На главную</a></p>`;
+
+    res.send(html);
+  } catch (error) {
+    console.error("Ошибка получения ленты:", error.message);
+    res.status(500).send("Не удалось открыть ленту подписок");
+  }
+});
+
 module.exports = router;
