@@ -223,9 +223,7 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
 
   try {
     const [posts] = await db.query(
-      `SELECT id, title, content
-       FROM posts
-       WHERE id = ? AND user_id = ?`,
+      `SELECT id, title, content, visibility FROM posts WHERE id = ? AND user_id = ?`,
       [postId, req.session.userId]
     );
 
@@ -249,6 +247,14 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
           <textarea id="content" name="content">${post.content}</textarea>
         </div>
 
+        <div>
+          <label for="visibility">Видимость:</label>
+          <select id="visibility" name="visibility">
+            <option value="public" ${post.visibility === "public" ? "selected" : ""}>Публичный пост</option>
+            <option value="hidden" ${post.visibility === "hidden" ? "selected" : ""}>Скрытый пост по ссылке</option>
+          </select>
+        </div>
+
         <button type="submit">Сохранить изменения</button>
       </form>
       <form method="POST" action="/posts/${post.id}/delete">
@@ -264,7 +270,7 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
 // Сохранение поста после редактирования
 router.post("/posts/:id/edit", requireAuth, async (req, res) => {
   const postId = Number(req.params.id);
-  const { title, content } = req.body;
+  const { title, content, visibility } = req.body;
 
   if (!Number.isInteger(postId) || postId <= 0) {
     return res.status(404).send("Пост не найден");
@@ -274,16 +280,33 @@ router.post("/posts/:id/edit", requireAuth, async (req, res) => {
     return res.status(400).send("Заголовок и текст поста должны быть заполнены");
   }
 
+  const postVisibility = visibility === "hidden" ? "hidden" : "public";
+
+  const hiddenToken = postVisibility === "hidden" ? crypto.randomBytes(32).toString("hex") : null;
+
   try {
     const [result] = await db.query(
       `UPDATE posts
-       SET title = ?, content = ?
-       WHERE id = ? AND user_id = ?`,
-      [title, content, postId, req.session.userId]
+        SET title = ?, content = ?, visibility = ?, hidden_token = ?
+        WHERE id = ? AND user_id = ?`,
+      [title, content, postVisibility, hiddenToken, postId, req.session.userId]
     );
 
     if (result.affectedRows === 0) {
       return res.status(403).send("Вы не можете редактировать этот пост");
+    }
+
+    if (postVisibility === "hidden") {
+      return res.send(`
+        <p>Пост успешно обновлён и стал скрытым.</p>
+        <p>Ссылка для доступа:</p>
+        <p>
+          <a href="/posts/${postId}?token=${hiddenToken}">
+            /posts/${postId}?token=${hiddenToken}
+          </a>
+        </p>
+        <p><a href="/posts/${postId}">Открыть пост как автор</a></p>
+      `);
     }
 
     res.send("Пост успешно обновлён");
