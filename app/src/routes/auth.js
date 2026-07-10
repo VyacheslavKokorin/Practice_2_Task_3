@@ -109,7 +109,7 @@ router.post("/login", async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.send(`Вы вошли как ${user.username}`);
+    res.redirect("/");
   } catch (error) {
     console.error("Ошибка входа:", error.message);
     res.status(500).send("Не удалось выполнить вход");
@@ -123,7 +123,7 @@ router.get("/logout", (req, res) => {
       return res.status(500).send("Не удалось выполнить выход");
     }
 
-    res.send("Вы успешно вышли из аккаунта");
+    res.redirect("/");
   });
 });
 
