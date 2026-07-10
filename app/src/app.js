@@ -4,6 +4,7 @@ const app = express();
 const db = require("./db");
 const authRoutes = require("./routes/auth");
 const postsRoutes = require("./routes/posts");
+const usersRoutes = require("./routes/users");
 const PORT = 3000;
 
 app.use(
@@ -17,6 +18,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(authRoutes);
 app.use(postsRoutes);
+app.use(usersRoutes);
 
 app.get("/", async (req, res) => {
   try {
