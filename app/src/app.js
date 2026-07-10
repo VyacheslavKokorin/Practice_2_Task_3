@@ -21,6 +21,7 @@ app.use(postsRoutes);
 app.get("/", async (req, res) => {
   try {
     const tag = req.query.tag;
+    const sort = req.query.sort;
 
     let sql = `
       SELECT posts.id, posts.title, posts.content, posts.created_at, users.username
@@ -48,9 +49,15 @@ app.get("/", async (req, res) => {
       params.push(tag);
     }
 
-    sql += `
-      ORDER BY posts.created_at DESC
-    `;
+    if (sort === "old") {
+      sql += `
+        ORDER BY posts.created_at ASC
+      `;
+    } else {
+      sql += `
+        ORDER BY posts.created_at DESC
+      `;
+    }
 
     const [posts] = await db.query(sql, params);
 
@@ -58,6 +65,13 @@ app.get("/", async (req, res) => {
 
     if (tag) {
       html += `<p>Фильтр по тегу: #${tag}</p>`;
+      html += `
+        <p>
+          Сортировка:
+          <a href="/?sort=new">Сначала новые</a> |
+          <a href="/?sort=old">Сначала старые</a>
+        </p>
+      `;
     }
 
     if (posts.length === 0) {
