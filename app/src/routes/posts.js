@@ -1,6 +1,7 @@
 const express = require("express");
 const requireAuth = require("../middleware/authMiddleware");
 const db = require("../db");
+const crypto = require("crypto");
 
 const router = express.Router();
 
@@ -25,55 +26,73 @@ router.get("/posts/create", requireAuth, (req, res) => {
         <input id="tags" name="tags" type="text" placeholder="новости, погода, образование">
       </div>
 
+      <div>
+        <label for="visibility">Видимость:</label>
+        <select id="visibility" name="visibility">
+          <option value="public">Публичный пост</option>
+          <option value="hidden">Скрытый пост по ссылке</option>
+        </select>
+      </div>
+
       <button type="submit">Создать пост</button>
     </form>
   `);
 });
 
 router.post("/posts/create", requireAuth, async (req, res) => {
-  const { title, content, tags } = req.body;
+  const { title, content, tags, visibility } = req.body;
 
   if (!title || !content) {
     return res.status(400).send("Заголовок и текст поста должны быть заполнены");
   }
 
-try {
-  const [result] = await db.query(
-    `INSERT INTO posts (user_id, title, content)
-     VALUES (?, ?, ?)`,
-    [req.session.userId, title, content]
-  );
+  const postVisibility = visibility === "hidden" ? "hidden" : "public";
+  const hiddenToken = postVisibility === "hidden" ? crypto.randomBytes(32).toString("hex") : null;
 
-  const postId = result.insertId;
+  try {
+    const [result] = await db.query(
+      `INSERT INTO posts (user_id, title, content, visibility, hidden_token)
+      VALUES (?, ?, ?, ?, ?)`,
+      [req.session.userId, title, content, postVisibility, hiddenToken]
+    );
 
-  if (tags && tags.trim() !== "") {
-    const tagNames = tags
-      .split(",")
-      .map(tag => tag.trim().toLowerCase())
-      .filter(tag => tag !== "");
+    const postId = result.insertId;
 
-    for (const tagName of tagNames) {
-      await db.query(
-        `INSERT IGNORE INTO tags (name)
-         VALUES (?)`,
-        [tagName]
-      );
+    if (tags && tags.trim() !== "") {
+      const tagNames = tags
+        .split(",")
+        .map(tag => tag.trim().toLowerCase())
+        .filter(tag => tag !== "");
 
-      const [tagRows] = await db.query(
-        `SELECT id FROM tags WHERE name = ?`,
-        [tagName]
-      );
+      for (const tagName of tagNames) {
+        await db.query(
+          `INSERT IGNORE INTO tags (name)
+          VALUES (?)`,
+          [tagName]
+        );
 
-      const tagId = tagRows[0].id;
+        const [tagRows] = await db.query(
+          `SELECT id FROM tags WHERE name = ?`,
+          [tagName]
+        );
 
-      await db.query(
-        `INSERT IGNORE INTO post_tags (post_id, tag_id)
-         VALUES (?, ?)`,
-        [postId, tagId]
-      );
+        const tagId = tagRows[0].id;
+
+        await db.query(
+          `INSERT IGNORE INTO post_tags (post_id, tag_id)
+          VALUES (?, ?)`,
+          [postId, tagId]
+        );
+      }
     }
-  }
 
+    if (postVisibility === "hidden") {
+      return res.send(`
+      <p>Скрытый пост успешно создан.</p>
+      <p>Ссылка для доступа:</p>
+      <p><a href="/posts/${postId}?token=${hiddenToken}">/posts/${postId}?token=${hiddenToken}</a></p>
+    `);
+    }
 
     res.send("Пост успешно создан");
   } catch (error) {
@@ -92,11 +111,10 @@ router.get("/posts/:id", async (req, res) => {
 
   try {
     const [posts] = await db.query(
-      `SELECT posts.id, posts.title, posts.content, posts.created_at, users.username
-       FROM posts
-       JOIN users ON posts.user_id = users.id
-       WHERE posts.id = ?
-         AND posts.visibility = 'public'`,
+      `SELECT posts.id, posts.user_id, posts.title, posts.content,
+          posts.visibility, posts.hidden_token, posts.created_at, users.username
+          FROM posts JOIN users ON posts.user_id = users.id
+          WHERE posts.id = ?`,
       [postId]
     );
 
@@ -123,6 +141,15 @@ router.get("/posts/:id", async (req, res) => {
     );
 
     const post = posts[0];
+
+    if (post.visibility === "hidden") {
+      const token = req.query.token;
+      const isAuthor = req.session.userId === post.user_id;
+
+      if (!isAuthor && token !== post.hidden_token) {
+        return res.status(403).send("Нет доступа к скрытому посту");
+      }
+    }
 
     let commentsHtml = "<h2>Комментарии</h2>";
 
