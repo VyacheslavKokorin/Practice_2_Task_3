@@ -126,7 +126,11 @@ router.get("/posts/:id", async (req, res) => {
     );
 
     if (posts.length === 0) {
-      return res.status(404).send("Пост не найден");
+      return res.status(404).send(layout("Пост не найден", `
+      <h1>Пост не найден</h1>
+      <p>Такого поста не существует или у вас нет доступа к нему.</p>
+      <p><a href="/">Вернуться на главную</a></p>
+    `, req));
     }
 
     const [comments] = await db.query(

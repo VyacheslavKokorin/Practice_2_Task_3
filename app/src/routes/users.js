@@ -124,9 +124,7 @@ router.get("/users/:id", async (req, res) => {
       }
     }
 
-    html += `<p><a href="/">На главную</a></p>`;
-
-    res.send(html);
+    res.send(layout(`Профиль ${user.username}`, html, req));
   } catch (error) {
     console.error("Ошибка получения профиля:", error.message);
     res.status(500).send("Не удалось открыть профиль");
@@ -214,7 +212,7 @@ router.get("/feed", requireAuth, async (req, res) => {
 
     html += `<p><a href="/">На главную</a></p>`;
 
-    res.send(html);
+    res.send(layout("Лента подписок", html, req));
   } catch (error) {
     console.error("Ошибка получения ленты:", error.message);
     res.status(500).send("Не удалось открыть ленту подписок");
