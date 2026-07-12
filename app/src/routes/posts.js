@@ -2,18 +2,19 @@ const express = require("express");
 const requireAuth = require("../middleware/authMiddleware");
 const db = require("../db");
 const crypto = require("crypto");
+const layout = require("../views/layout");
 
 const router = express.Router();
 
 // Создание поста
 router.get("/posts/create", requireAuth, (req, res) => {
-  res.send(`
+  const html = `
     <h1>Создание поста</h1>
 
     <form method="POST" action="/posts/create">
       <div>
         <label for="title">Заголовок:</label>
-        <input id="title" name="title" type="text">
+        <input id="title" type="text" name="title">
       </div>
 
       <div>
@@ -23,7 +24,7 @@ router.get("/posts/create", requireAuth, (req, res) => {
 
       <div>
         <label for="tags">Теги через запятую:</label>
-        <input id="tags" name="tags" type="text" placeholder="новости, погода, образование">
+        <input id="tags" type="text" name="tags">
       </div>
 
       <div>
@@ -34,9 +35,13 @@ router.get("/posts/create", requireAuth, (req, res) => {
         </select>
       </div>
 
-      <button type="submit">Создать пост</button>
+      <button type="submit">Опубликовать</button>
     </form>
-  `);
+
+    <p><a href="/">На главную</a></p>
+  `;
+
+  res.send(layout("Создание поста", html, req));
 });
 
 router.post("/posts/create", requireAuth, async (req, res) => {
@@ -196,10 +201,23 @@ router.get("/posts/:id", async (req, res) => {
       }
     }
 
-    res.send(`
+    let authorActions = "";
+
+    if (req.session.userId === post.user_id) {
+      authorActions = `
+        <p>
+          <a href="/posts/${post.id}/edit">Редактировать пост</a>
+        </p>
+  `;
+    }
+
+    const html = `
       <h1>${post.title}</h1>
+
+      ${authorActions}
+
       <p>${post.content}</p>
-      <p>Автор: ${post.username}</p>
+      <p>Автор: <a href="/users/${post.user_id}">${post.username}</a></p>
       <p>Дата: ${post.created_at}</p>
 
       ${tagsHtml}
@@ -208,7 +226,9 @@ router.get("/posts/:id", async (req, res) => {
       ${commentForm}
 
       <p><a href="/">Вернуться к списку постов</a></p>
-    `);
+    `;
+
+    res.send(layout(post.title, html, req));
   } catch (error) {
     console.error("Ошибка получения поста:", error.message);
     res.status(500).send("Не удалось получить пост");
@@ -235,13 +255,13 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
 
     const post = posts[0];
 
-    res.send(`
+    const html = `
       <h1>Редактирование поста</h1>
 
       <form method="POST" action="/posts/${post.id}/edit">
         <div>
           <label for="title">Заголовок:</label>
-          <input id="title" name="title" type="text" value="${post.title}">
+          <input id="title" type="text" name="title" value="${post.title}">
         </div>
 
         <div>
@@ -259,10 +279,16 @@ router.get("/posts/:id/edit", requireAuth, async (req, res) => {
 
         <button type="submit">Сохранить изменения</button>
       </form>
+
       <form method="POST" action="/posts/${post.id}/delete">
         <button type="submit">Удалить пост</button>
       </form>
-    `);
+
+      <p><a href="/posts/${post.id}">Вернуться к посту</a></p>
+      <p><a href="/">На главную</a></p>
+    `;
+
+    res.send(layout("Редактирование поста", html, req));
   } catch (error) {
     console.error("Ошибка получения поста для редактирования:", error.message);
     res.status(500).send("Не удалось открыть страницу редактирования");
@@ -299,19 +325,23 @@ router.post("/posts/:id/edit", requireAuth, async (req, res) => {
     }
 
     if (postVisibility === "hidden") {
-      return res.send(`
-        <p>Пост успешно обновлён и стал скрытым.</p>
+      return res.send(layout("Пост обновлён", `
+        <h1>Пост успешно обновлён и стал скрытым</h1>
+
         <p>Ссылка для доступа:</p>
+
         <p>
           <a href="/posts/${postId}?token=${hiddenToken}">
             /posts/${postId}?token=${hiddenToken}
           </a>
         </p>
+
         <p><a href="/posts/${postId}">Открыть пост как автор</a></p>
-      `);
+        <p><a href="/">На главную</a></p>
+      `, req));
     }
 
-    res.send("Пост успешно обновлён");
+    res.redirect(`/posts/${postId}`);
   } catch (error) {
     console.error("Ошибка редактирования поста:", error.message);
     res.status(500).send("Не удалось обновить пост");
