@@ -88,13 +88,15 @@ router.post("/posts/create", requireAuth, async (req, res) => {
 
     if (postVisibility === "hidden") {
       return res.send(`
-      <p>Скрытый пост успешно создан.</p>
-      <p>Ссылка для доступа:</p>
-      <p><a href="/posts/${postId}?token=${hiddenToken}">/posts/${postId}?token=${hiddenToken}</a></p>
-    `);
+        <p>Скрытый пост успешно создан.</p>
+        <p>Ссылка для доступа:</p>
+        <p><a href="/posts/${postId}?token=${hiddenToken}">/posts/${postId}?token=${hiddenToken}</a></p>
+        <p><a href="/posts/${postId}">Открыть пост как автор</a></p>
+        <p><a href="/">На главную</a></p>
+  `);
     }
 
-    res.send("Пост успешно создан");
+    res.redirect(`/posts/${postId}`);
   } catch (error) {
     console.error("Ошибка создания поста:", error.message);
     res.status(500).send("Не удалось создать пост");

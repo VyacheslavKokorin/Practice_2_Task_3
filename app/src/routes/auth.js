@@ -2,30 +2,35 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const db = require("../db");
 const router = express.Router();
+const layout = require("../views/layout");
 
 router.get("/register", (req, res) => {
-  res.send(`
+  const html = `
     <h1>Регистрация</h1>
 
     <form method="POST" action="/register">
       <div>
-        <label for="username">Логин:</label>
-        <input id="username" name="username" type="text">
+        <label for="username">Имя пользователя:</label>
+        <input id="username" type="text" name="username">
       </div>
 
       <div>
         <label for="email">Email:</label>
-        <input id="email" name="email" type="email">
+        <input id="email" type="email" name="email">
       </div>
 
       <div>
         <label for="password">Пароль:</label>
-        <input id="password" name="password" type="password">
+        <input id="password" type="password" name="password">
       </div>
 
       <button type="submit">Зарегистрироваться</button>
     </form>
-  `);
+
+    <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+  `;
+
+  res.send(layout("Регистрация", html, req));
 });
 
 router.post("/register", async (req, res) => {
@@ -60,23 +65,27 @@ router.post("/register", async (req, res) => {
 });
 
 router.get("/login", (req, res) => {
-  res.send(`
+  const html = `
     <h1>Вход</h1>
 
     <form method="POST" action="/login">
       <div>
         <label for="email">Email:</label>
-        <input id="email" name="email" type="email">
+        <input id="email" type="email" name="email">
       </div>
 
       <div>
         <label for="password">Пароль:</label>
-        <input id="password" name="password" type="password">
+        <input id="password" type="password" name="password">
       </div>
 
       <button type="submit">Войти</button>
     </form>
-  `);
+
+    <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+  `;
+
+  res.send(layout("Вход", html, req));
 });
 
 router.post("/login", async (req, res) => {
