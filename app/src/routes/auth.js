@@ -38,12 +38,16 @@ router.post("/register", async (req, res) => {
   try {
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await db.query(
-      "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+    const [result] = await db.query(
+      `INSERT INTO users (username, email, password_hash)
+        VALUES (?, ?, ?)`,
       [username, email, passwordHash]
     );
 
-    res.send("Пользователь успешно зарегистрирован");
+    req.session.userId = result.insertId;
+    req.session.username = username;
+
+    res.redirect("/");
   } catch (error) {
     console.error("Ошибка регистрации:", error.message);
 

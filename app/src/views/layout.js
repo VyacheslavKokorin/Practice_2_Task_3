@@ -28,6 +28,7 @@ function layout(title, content, req) {
       <header>
         <nav>
           <a href="/">Главная</a>
+          <a href="/users">Пользователи</a>
           ${authLinks}
         </nav>
       </header>

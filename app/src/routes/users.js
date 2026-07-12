@@ -1,8 +1,49 @@
 const express = require("express");
 const db = require("../db");
 const requireAuth = require("../middleware/authMiddleware");
+const layout = require("../views/layout");
 
 const router = express.Router();
+
+router.get("/users", async (req, res) => {
+  try {
+    const [users] = await db.query(
+      `SELECT id, username, created_at
+       FROM users
+       ORDER BY username ASC`
+    );
+
+    let html = "<h1>Пользователи</h1>";
+
+    if (users.length === 0) {
+      html += "<p>Пользователей пока нет.</p>";
+    } else {
+      html += "<ul>";
+
+      for (const user of users) {
+        let currentUserText = "";
+
+        if (req.session.userId === user.id) {
+          currentUserText = " — это вы";
+        }
+
+        html += `
+          <li>
+            <a href="/users/${user.id}">${user.username}</a>
+            ${currentUserText}
+          </li>
+        `;
+      }
+
+      html += "</ul>";
+    }
+
+    res.send(layout("Пользователи", html, req));
+  } catch (error) {
+    console.error("Ошибка получения пользователей:", error.message);
+    res.status(500).send("Не удалось получить список пользователей");
+  }
+});
 
 router.get("/users/:id", async (req, res) => {
   const userId = Number(req.params.id);
@@ -28,14 +69,14 @@ router.get("/users/:id", async (req, res) => {
     let isSubscribed = false;
 
     if (req.session.userId && req.session.userId !== user.id) {
-    const [subscriptions] = await db.query(
+      const [subscriptions] = await db.query(
         `SELECT id
         FROM subscriptions
         WHERE follower_id = ? AND following_id = ?`,
         [req.session.userId, user.id]
-    );
+      );
 
-    isSubscribed = subscriptions.length > 0;
+      isSubscribed = subscriptions.length > 0;
     }
 
     const [posts] = await db.query(
@@ -53,19 +94,19 @@ router.get("/users/:id", async (req, res) => {
     `;
 
     if (req.session.userId && req.session.userId !== user.id) {
-        if (isSubscribed) {
-            html += `
+      if (isSubscribed) {
+        html += `
             <form method="POST" action="/users/${user.id}/unfollow">
                 <button type="submit">Отписаться</button>
             </form>
             `;
-        } else {
-            html += `
+      } else {
+        html += `
             <form method="POST" action="/users/${user.id}/follow">
                 <button type="submit">Подписаться</button>
             </form>
             `;
-        }
+      }
     }
 
     if (posts.length === 0) {
