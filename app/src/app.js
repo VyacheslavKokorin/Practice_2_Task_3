@@ -7,6 +7,7 @@ const postsRoutes = require("./routes/posts");
 const usersRoutes = require("./routes/users");
 const PORT = 3000;
 const layout = require("./views/layout");
+const formatDate = require("./utils/formatDate");
 
 app.use(
   session({
@@ -87,7 +88,7 @@ app.get("/", async (req, res) => {
             <h2>${post.title}</h2>
             <p>${post.content}</p>
             <p>Автор: <a href="/users/${post.author_id}">${post.username}</a></p>
-            <p>Дата: ${post.created_at}</p>
+            <p>Дата: ${formatDate(post.created_at)}</p>
             <hr>
           </article>
         `;

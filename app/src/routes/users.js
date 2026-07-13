@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const requireAuth = require("../middleware/authMiddleware");
 const layout = require("../views/layout");
+const formatDate = require("../utils/formatDate");
 
 const router = express.Router();
 
@@ -89,7 +90,7 @@ router.get("/users/:id", async (req, res) => {
 
     let html = `
       <h1>Профиль пользователя ${user.username}</h1>
-      <p>Дата регистрации: ${user.created_at}</p>
+      <p>Дата регистрации: ${formatDate(user.created_at)}</p>
       <h2>Публичные посты пользователя</h2>
     `;
 
@@ -117,7 +118,7 @@ router.get("/users/:id", async (req, res) => {
           <article>
             <h3><a href="/posts/${post.id}">${post.title}</a></h3>
             <p>${post.content}</p>
-            <p>Дата: ${post.created_at}</p>
+            <p>Дата: ${formatDate(post.created_at)}</p>
             <hr>
           </article>
         `;

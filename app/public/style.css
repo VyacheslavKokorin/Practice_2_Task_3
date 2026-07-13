@@ -34,16 +34,31 @@ article {
   margin-bottom: 15px;
 }
 
+form div {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
 input, textarea, select {
   width: 100%;
-  max-width: 500px;
+  max-width: 650px;
+  box-sizing: border-box;
   padding: 8px;
-  margin: 5px 0 15px 0;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 
 button {
   padding: 8px 14px;
   cursor: pointer;
+  margin-top: 5px;
 }
 
 a {

@@ -3,6 +3,7 @@ const requireAuth = require("../middleware/authMiddleware");
 const db = require("../db");
 const crypto = require("crypto");
 const layout = require("../views/layout");
+const formatDate = require("../utils/formatDate");
 
 const router = express.Router();
 
@@ -172,7 +173,7 @@ router.get("/posts/:id", async (req, res) => {
           <div>
             <p>${comment.content}</p>
             <p>Автор: ${comment.username}</p>
-            <p>Дата: ${comment.created_at}</p>
+            <p>Дата: ${formatDate(comment.created_at)}</p>
           </div>
           <hr>
         `;
@@ -222,7 +223,7 @@ router.get("/posts/:id", async (req, res) => {
 
       <p>${post.content}</p>
       <p>Автор: <a href="/users/${post.user_id}">${post.username}</a></p>
-      <p>Дата: ${post.created_at}</p>
+      <p>Дата: ${formatDate(post.created_at)}</p>
 
       ${tagsHtml}
 
